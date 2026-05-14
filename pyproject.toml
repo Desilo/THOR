@@ -1,0 +1,44 @@
+[project]
+name = "thor"
+version = "1.0.0"
+description = ""
+authors = []
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+dependencies = [
+    "torch>=2.11.0,<3.0.0",
+    "datasets>=4.8.4,<5.0.0",
+    "safetensors>=0.7.0,<0.8.0",
+    "matplotlib>=3.10.8,<4.0.0",
+    "transformers>=5.5.4,<6.0.0",
+    "desilofhe-cu130>=1.13.0,<2.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.10,<0.16.0"
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 119
+exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E203"]
+
+[project.scripts]
+forward = 'thor.forward:main'
+forward_batch = 'thor.forward_batch:main'
+encode_weights = 'thor.encode_weights:main'
