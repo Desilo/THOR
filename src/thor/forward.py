@@ -22,9 +22,6 @@ def parse_args():
     parser.add_argument("--target-idx", type=int, default=0, help="Validation sample index to run.")
     parser.add_argument("--device", type=int, default=0, help="CUDA device index.")
     parser.add_argument(
-        "--compact", action="store_true", help="Use a memory-optimized execution mode with reduced memory footprint."
-    )
-    parser.add_argument(
         "--no-plots",
         action="store_true",
         help="Skip the per-layer comparison plots.",
@@ -367,18 +364,12 @@ def plot_variables(variables, plain_reference, he, layer_idx, output_dir, i=0, j
 def run_forward(args):
     print(args)
 
-    compact = args.compact
-    if compact:
-        key_size = "medium"
-    else:
-        key_size = "large"
-
     output_dir = Path(args.output_dir) if args.output_dir is not None else Path.cwd()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     timer = Timer()
     with timer.setup():
-        he = HE(args.device, compact, key_size, timer)
+        he = HE(args.device, timer)
         data_loader, x, attention_mask, thor_attention_mask, clear_attention_mask = load_encrypted_input(
             args.dataset_type,
             args.target_idx,
@@ -434,8 +425,6 @@ def run_forward(args):
         dataset_type=args.dataset_type,
         target_idx=args.target_idx,
         device=args.device,
-        compact=compact,
-        key_size=key_size,
         pred=pred,
         plain_pred=plain_pred,
         label=label,

@@ -13,8 +13,8 @@ The repository exposes three CLI commands:
 
 ### Requirements
 
-- desilofhe 1.14+ (CUDA version 12.1 to 13.2).
-- GPU with at least 36 GB of VRAM (the default), or 32 GB when using the `--compact` flag.
+- desilofhe 2.0+ (CUDA 13.2 or 13.4).
+- GPU with at least 32 GB of VRAM.
 
 ### 1. Installation
 
@@ -43,16 +43,15 @@ poetry run encode_weights \
   --model_path ./finetuned_models/mrpc/model.safetensors
 ```
 
-This writes default-mode files to `./light_plaintexts/default/`. With `--compact`, it writes compact-mode files to `./light_plaintexts/compact/`.
+This writes the files to `./light_plaintexts/`. Files encoded with desilofhe 1.x are not compatible with 2.0 and must be regenerated.
 
-2-3. (Recommended) Cache the encoded files for your selected mode with `vmtouch -t light_plaintexts/default/` or `vmtouch -t light_plaintexts/compact/`. Each directory is around 110 GB, so make sure you have enough RAM for the mode you cache.
+2-3. (Recommended) Cache the encoded files with `vmtouch -t light_plaintexts/`. The directory is around 110 GB, so make sure you have enough RAM.
 
 You can install `vmtouch` from your package manager or from source: [vmtouch](https://github.com/hoytech/vmtouch)
 
 ### 3. Forward Pass
 
 - Single encrypted forward pass: `poetry run forward`
-- With the memory-efficient engine: `poetry run forward --compact`
 
 You can also run a batch over a range of validation indices:
 
@@ -66,23 +65,11 @@ poetry run forward_batch \
 
 `forward_batch` creates one subdirectory per target index and skips indices that already have results in the output directory.
 
-### 4. (Optional) The Compact Mode
-
-All scripts (forward, forward_batch, encode_weights) support a `--compact` flag that uses a more compact encoding for the internal data structures, which can reduce memory usage during the forward pass and enable it to run on GPUs with 32 GB of VRAM.
-
-Note that the compact encoding is not compatible with the non-compact forward pass, so you must use the `--compact` flag for both encoding and forward steps if you choose to use it.
-
-```bash
-# With compact encoding
-poetry run encode_weights --compact
-poetry run forward --compact
-```
-
 ## Results
 
 Each `forward` run writes:
 
-- `result.json`, which includes the dataset type, target index, device, key size, prediction, plain-model prediction, label, HE logits, and plain logits
+- `result.json`, which includes the dataset type, target index, device, prediction, plain-model prediction, label, HE logits, and plain logits
 - Optional per-layer plots such as `layer-00.png` through `layer-11.png`
 
 During execution, the script also prints per-stage timing information from `thor.timer.Timer`.
@@ -109,12 +96,12 @@ now: 2026-05-13 02:24:13.853284
 The accuracy of the total run of MRPC examples is 84.07% (343/408), and the average compute time is 590.6 seconds on an NVIDIA A100-SXM4-80GB GPU.
 Note that the original THOR paper reports 84.80% accuracy and 602 seconds compute time.
 
-| Mode | CPU | GPU | Compute Time |
-|---|---|---|---|
-| Default | Intel Xeon Platinum 8480+ | NVIDIA H100-HBM3-80GB | 436.1s |
-| Default | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 590.6s |
-| Compact | Intel Xeon Platinum 8480+ | NVIDIA H100-HBM3-80GB | 474.7s |
-| Compact | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 637.7s |
-| Compact | Intel Core i7-10700K @ 3.80GHz | NVIDIA GeForce RTX 5090 | 341.1s |
+| desilofhe | Mode | CPU | GPU | Compute Time |
+|---|---|---|---|---|
+| 1.x | Default | Intel Xeon Platinum 8480+ | NVIDIA H100-HBM3-80GB | 436.1s |
+| 1.x | Default | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 590.6s |
+| 1.x | Compact | Intel Xeon Platinum 8480+ | NVIDIA H100-HBM3-80GB | 474.7s |
+| 1.x | Compact | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 637.7s |
+| 1.x | Compact | Intel Core i7-10700K @ 3.80GHz | NVIDIA GeForce RTX 5090 | 341.1s |
 
-For optimal performance, cache the encoded files for your selected mode with `vmtouch -t light_plaintexts/default/` or `vmtouch -t light_plaintexts/compact/` before running the forward pass.
+For optimal performance, cache the encoded files with `vmtouch -t light_plaintexts/` before running the forward pass.
