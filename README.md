@@ -13,7 +13,7 @@ The repository exposes three CLI commands:
 
 ### Requirements
 
-- desilofhe 2.0+ (CUDA 13.2 or 13.4).
+- desilofhe 2.0.1+ (CUDA 13.2 or 13.4).
 - GPU with at least 32 GB of VRAM.
 
 ### 1. Installation
