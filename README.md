@@ -81,13 +81,13 @@ During execution, the script also prints per-stage timing information from `thor
 
 ```
 Predicted by HE: 1, Ground Truth: 1
-HE A [-3.007829226318608] B [5.926385952893445]
+HE A [-3.0007874894011994] B [5.904942303432394]
 PT A [-3.12514591217041] B [6.013195514678955]
-now: 2026-05-13 02:24:13.853284
+now: 2026-10-29 06:16:56.145461
 ----------------------------------------------------------------------------------
            stage time    compute time       total time    stage name
 ----------------------------------------------------------------------------------
-                           6m  2.666s     11m 26.870s
+                           1m 13.841s      6m 23.962s
 ----------------------------------------------------------------------------------
 ```
 
@@ -100,5 +100,11 @@ Note that the original THOR paper reports 84.80% accuracy and 602 seconds comput
 |---|---|---|---|
 | 1.x | Intel Xeon Platinum 8480+ | NVIDIA H100-HBM3-80GB | 436.1s |
 | 1.x | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 590.6s |
+
+With desilofhe 2.0.1, the forward pass on validation index 0 gives:
+
+| desilofhe | CPU | GPU | Compute Time |
+|---|---|---|---|
+| 2.0.1 | Intel Core i7-10700K @ 3.80GHz | NVIDIA GeForce RTX 5090 | 73.8s |
 
 For optimal performance, cache the encoded files with `vmtouch -t light_plaintexts/` before running the forward pass.
