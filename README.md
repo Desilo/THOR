@@ -96,12 +96,9 @@ now: 2026-05-13 02:24:13.853284
 The accuracy of the total run of MRPC examples is 84.07% (343/408), and the average compute time is 590.6 seconds on an NVIDIA A100-SXM4-80GB GPU.
 Note that the original THOR paper reports 84.80% accuracy and 602 seconds compute time.
 
-| desilofhe | Mode | CPU | GPU | Compute Time |
-|---|---|---|---|---|
-| 1.x | Default | Intel Xeon Platinum 8480+ | NVIDIA H100-HBM3-80GB | 436.1s |
-| 1.x | Default | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 590.6s |
-| 1.x | Compact | Intel Xeon Platinum 8480+ | NVIDIA H100-HBM3-80GB | 474.7s |
-| 1.x | Compact | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 637.7s |
-| 1.x | Compact | Intel Core i7-10700K @ 3.80GHz | NVIDIA GeForce RTX 5090 | 341.1s |
+| desilofhe | CPU | GPU | Compute Time |
+|---|---|---|---|
+| 1.x | Intel Xeon Platinum 8480+ | NVIDIA H100-HBM3-80GB | 436.1s |
+| 1.x | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 590.6s |
 
 For optimal performance, cache the encoded files with `vmtouch -t light_plaintexts/` before running the forward pass.
