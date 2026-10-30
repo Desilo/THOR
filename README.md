@@ -93,12 +93,11 @@ now: 2026-10-29 06:16:56.145461
 
 ### Benchmark
 
-The forward pass on validation index 0 gives:
+The desilofhe row is measured on validation index 0.
 
-| desilofhe | CPU | GPU | Compute Time |
+| Implementation | CPU | GPU | Compute Time |
 |---|---|---|---|
-| 2.0.1 | Intel Core i7-10700K @ 3.80GHz | NVIDIA GeForce RTX 5090 | 73.8s |
-
-Note that the original THOR paper reports 84.80% accuracy and 602 seconds compute time.
+| Original THOR paper | - | NVIDIA A100-SXM4-80GB | 602s |
+| desilofhe 2.0.1 | Intel Core i7-10700K @ 3.80GHz | NVIDIA GeForce RTX 5090 | 73.8s |
 
 For optimal performance, cache the encoded files with `vmtouch -t light_plaintexts/` before running the forward pass.
