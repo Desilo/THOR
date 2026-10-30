@@ -97,7 +97,7 @@ The desilofhe row is measured on validation index 0.
 
 | Implementation | CPU | GPU | Compute Time |
 |---|---|---|---|
-| Original THOR paper | - | NVIDIA A100-SXM4-80GB | 602s |
+| Original THOR paper | Intel Xeon Platinum 8462Y+ | NVIDIA A100-SXM4-80GB | 602s |
 | desilofhe 2.0.1 | Intel Core i7-10700K @ 3.80GHz | NVIDIA GeForce RTX 5090 | 73.8s |
 
 For optimal performance, cache the encoded files with `vmtouch -t light_plaintexts/` before running the forward pass.
