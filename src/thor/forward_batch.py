@@ -29,9 +29,6 @@ def parse_args():
         default="./forward-batch-results",
         help="Output directory. Each target index gets its own subdirectory with plots and result.json.",
     )
-    parser.add_argument(
-        "--compact", action="store_true", help="Use a memory-optimized execution mode with reduced memory footprint."
-    )
     parser.add_argument("--no-plots", action="store_true", help="Skip saving per-layer comparison plots.")
     return parser.parse_args()
 
@@ -82,7 +79,6 @@ def worker(device, tasks, results, worker_args):
                 dataset_type=worker_args.dataset_type,
                 target_idx=target_idx,
                 device=device,
-                compact=worker_args.compact,
                 no_plots=worker_args.no_plots,
                 output_dir=str(get_target_output_dir(worker_args.output_dir, target_idx)),
                 print_rotate_levels=False,

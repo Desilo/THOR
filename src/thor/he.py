@@ -1,5 +1,4 @@
 from collections import defaultdict
-from pathlib import Path
 
 import numpy as np
 from desilofhe import (
@@ -7,16 +6,17 @@ from desilofhe import (
     Ciphertext,
     ConjugationKey,
     Engine,
-    FixedRotationKey,
+    FixedRollKey,
     Plaintext,
     RelinearizationKey,
     SecretKey,
 )
 
-from .paths import get_light_plaintext_path
+from .paths import LIGHT_PLAINTEXT_PATH
 
 SLOT_COUNT = 2**15
 GROUP_SIZE = 2**11
+MAX_LEVEL = 14
 
 
 class DeltaCiphertext:
@@ -26,32 +26,23 @@ class DeltaCiphertext:
 
 
 class HE:
-    def __init__(self, device, compact, bootstrap_key_size, timer):
-        self.bootstrap_key_size = bootstrap_key_size
-        self.compact = compact
+    def __init__(self, device, timer):
         self.timer = timer
-        self.light_plaintext_path = get_light_plaintext_path(compact)
+        self.light_plaintext_path = LIGHT_PLAINTEXT_PATH
         self.mask_path = self.light_plaintext_path / "masks"
 
-        self.engine = Engine(use_bootstrap_to_14_levels=True, mode="async gpu", device_id=device, compact=compact)
+        self.engine = Engine(bootstrap=True, mode="gpu", device_id=device)
         self.secret_key: SecretKey = self.engine.create_secret_key()
         self.conjugation_key: ConjugationKey = self.engine.create_conjugation_key(self.secret_key)
         self.relinearization_key: RelinearizationKey = self.engine.create_relinearization_key(self.secret_key)
-        self.fixed_rotation_keys: dict[int, FixedRotationKey] = dict()
+        self.fixed_roll_keys: dict[int, FixedRollKey] = dict()
 
-        self.bootstrap_key: BootstrapKey = self.engine.create_bootstrap_key(
-            self.secret_key, size=self.bootstrap_key_size
-        )
+        self.bootstrap_key: BootstrapKey = self.engine.create_bootstrap_key(self.secret_key)
 
         # fmt: off
-        if self.compact: # key size: medium
-            self.bootstrap_deltas = set([
-                1, 2, 3, 4, 5, 6, 7, 8, 16, 24, 32, 64, 96, 128, 160, 192, 224, 256, 512, 768, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 16384, 24576, 31744, 32000, 32256, 32512, 32736, 32744, 32752, 32760  # noqa: E501
-            ])
-        else:  # key size: large
-            self.bootstrap_deltas = set([
-                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 480, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 14336, 15360, 16384, 31744, 32256, 32736, 32752  # noqa: E501
-            ])
+        self.bootstrap_deltas = set([
+            1, 2, 3, 4, 5, 6, 7, 8, 16, 24, 32, 64, 96, 128, 160, 192, 224, 256, 512, 768, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 16384, 24576, 31744, 32000, 32256, 32512, 32736, 32744, 32752, 32760  # noqa: E501
+        ])
 
         rotation_contexts = [
              (0, 9), (1, 14), (2, 14), (3, 12), (4, 14), (5, 12), (6, 11), (8, 7), (16, 10), (32, 10), (64, 10), (128, 10), (240, 9), (256, 10), (496, 9), (512, 10), (752, 9), (1008, 9), (1024, 10), (1264, 9), (1520, 9), (1776, 9), (2032, 9), (2048, 8), (2272, 9), (2528, 9), (2784, 9), (3040, 9), (3184, 9), (3296, 9), (3312, 9), (3440, 9), (3552, 9), (3568, 9), (3696, 9), (3808, 9), (3824, 9), (3952, 9), (4064, 9), (4080, 9), (4304, 9), (4560, 9), (4816, 9), (5072, 9), (5328, 9), (5584, 9), (5840, 9), (6096, 9), (6336, 9), (6592, 9), (6848, 9), (7104, 9), (7264, 9), (7360, 9), (7392, 9), (7520, 9), (7616, 9), (7648, 9), (7776, 9), (7872, 9), (7904, 9), (8032, 9), (8128, 9), (8160, 9), (8368, 9), (8624, 9), (8880, 9), (9136, 9), (9392, 9), (9648, 9), (9904, 9), (10160, 9), (10400, 9), (10656, 9), (10912, 9), (11168, 9), (11344, 9), (11424, 9), (11472, 9), (11600, 9), (11680, 9), (11728, 9), (11856, 9), (11936, 9), (11984, 9), (12112, 9), (12192, 9), (12240, 9), (12432, 9), (12688, 9), (12944, 9), (13200, 9), (13456, 9), (13712, 9), (13968, 9), (14224, 9), (14464, 9), (14720, 9), (14976, 9), (15232, 9), (15424, 9), (15488, 9), (15552, 9), (15680, 9), (15744, 9), (15808, 9), (15936, 9), (16000, 9), (16064, 9), (16192, 9), (16256, 9), (16320, 9), (16384, 13), (16496, 9), (16752, 9), (17008, 9), (17264, 9), (17520, 9), (17776, 9), (18032, 9), (18288, 9), (18528, 9), (18784, 9), (19040, 9), (19296, 9), (19504, 9), (19552, 9), (19632, 9), (19760, 9), (19808, 9), (19888, 9), (20016, 9), (20064, 9), (20144, 9), (20272, 9), (20320, 9), (20400, 9), (20560, 9), (20816, 9), (21072, 9), (21328, 9), (21584, 9), (21840, 9), (22096, 9), (22352, 9), (22592, 9), (22848, 9), (23104, 9), (23360, 9), (23584, 9), (23616, 9), (23712, 9), (23840, 9), (23872, 9), (23968, 9), (24096, 9), (24128, 9), (24224, 9), (24352, 9), (24384, 9), (24480, 9), (24576, 13), (24624, 9), (24880, 9), (25136, 9), (25392, 9), (25648, 9), (25904, 9), (26160, 9), (26416, 9), (26656, 9), (26912, 9), (27168, 9), (27424, 9), (27664, 9), (27680, 9), (27792, 9), (27920, 9), (27936, 9), (28048, 9), (28176, 9), (28192, 9), (28304, 9), (28432, 9), (28448, 9), (28560, 9), (28672, 14), (28688, 9), (28944, 9), (29200, 9), (29456, 9), (29712, 9), (29968, 9), (30224, 9), (30480, 9), (30720, 14), (30976, 9), (31232, 9), (31488, 9), (31744, 13), (31872, 9), (32000, 9), (32128, 9), (32256, 13), (32384, 9), (32512, 13), (32640, 13), (32704, 13), (32736, 13), (32752, 13), (32757, 12), (32758, 12), (32759, 12), (32760, 12), (32761, 12), (32762, 11), (32763, 8), (32764, 13), (32765, 8), (32766, 13), (32767, 13)  # noqa: E501
@@ -62,8 +53,7 @@ class HE:
             if delta in self.bootstrap_deltas or delta == 0:
                 continue
 
-            fixed_rotation_key = self.engine.create_fixed_rotation_key(self.secret_key, delta, level=level)
-            self.fixed_rotation_keys[delta] = fixed_rotation_key
+            self.fixed_roll_keys[delta] = self.engine.create_fixed_roll_key(self.secret_key, delta, level=level)
 
         self.rotate_levels: dict[int, int] = defaultdict(int)
 
@@ -77,7 +67,7 @@ class HE:
         self.masks["make_copies"][1] = self.engine.read_light_plaintext(str(self.mask_path / "make_copies_1"))
         self.masks["attention_dense"] = self.engine.read_light_plaintext(str(self.mask_path / "attention_dense"))
 
-        max_level = self.engine.max_level
+        max_level = MAX_LEVEL
         layernorm_mask = np.array(([1] * 1 + [0] * 15) * 2**11)
         self.masks["layernorm"] = layernorm_mask
         self.masks["invsqrt_b"] = self.prepare_for_multiply(self.encrypt(layernorm_mask, max_level))
@@ -158,22 +148,21 @@ class HE:
         if normalized_delta == 0:
             rotated = self.engine.clone(ciphertext)
         elif normalized_delta in self.bootstrap_deltas:
-            rotated = self.engine.rotate(ciphertext, self.bootstrap_key, normalized_delta)
+            rotated = self.engine.roll(ciphertext, self.bootstrap_key, normalized_delta)
         else:
-            if normalized_delta not in self.fixed_rotation_keys:
+            if normalized_delta not in self.fixed_roll_keys:
                 level = ciphertext.level
-                print(f"\tADDING FIXED ROTATION KEY FOR {normalized_delta} LEVEL {level}")
-                self.fixed_rotation_keys[normalized_delta] = self.engine.create_fixed_rotation_key(
-                    self.secret_key, normalized_delta, level
+                print(f"\tADDING FIXED ROLL KEY FOR {normalized_delta} LEVEL {level}")
+                self.fixed_roll_keys[normalized_delta] = self.engine.create_fixed_roll_key(
+                    self.secret_key, normalized_delta, level=level
                 )
-            elif self.fixed_rotation_keys[normalized_delta].level < ciphertext.level:
+            elif self.fixed_roll_keys[normalized_delta].level < ciphertext.level:
                 level = ciphertext.level
-                print(f"\tREPLACING FIXED ROTATION KEY FOR {normalized_delta} LEVEL {level}")
-                self.fixed_rotation_keys[normalized_delta] = self.engine.create_fixed_rotation_key(
-                    self.secret_key, normalized_delta, level
+                print(f"\tREPLACING FIXED ROLL KEY FOR {normalized_delta} LEVEL {level}")
+                self.fixed_roll_keys[normalized_delta] = self.engine.create_fixed_roll_key(
+                    self.secret_key, normalized_delta, level=level
                 )
-            fixed_rotation_key = self.fixed_rotation_keys[normalized_delta]
-            rotated = self.engine.rotate(ciphertext, fixed_rotation_key)
+            rotated = self.engine.roll(ciphertext, self.fixed_roll_keys[normalized_delta])
         return rotated
 
     def rescale(self, ciphertext: Ciphertext) -> Ciphertext:
@@ -202,15 +191,16 @@ class HE:
         return np.real(decrypted)
 
     def bootstrap(self, ciphertext: Ciphertext) -> Ciphertext:
-        return self.engine.bootstrap(
+        bootstrapped = self.engine.bootstrap(
             ciphertext,
             self.relinearization_key,
             self.conjugation_key,
             self.bootstrap_key,
         )
+        return self.engine.level_down(bootstrapped, MAX_LEVEL)
 
     def get_input_level(self, x):
-        return min(x.flat[0].level_available, 14)
+        return min(x.flat[0].level_available, MAX_LEVEL)
 
     def stage_01_complexify_x(self, x, layer_index):
         x_cplx = np.full((4,), None, dtype=object)
@@ -313,13 +303,13 @@ class HE:
             output[out_index] = temp
         return output
 
-    def encode_to_light_plaintext(self, weights, level=14):
+    def encode_to_light_plaintext(self, weights, level=MAX_LEVEL):
         output = np.full(weights.shape, None, dtype=object)
         for index, weight in np.ndenumerate(weights):
             output[index] = self.engine.encode_to_light_plaintext(weight, level)
         return output
 
-    def encode_to_plaintext(self, biases, level=14):
+    def encode_to_plaintext(self, biases, level=MAX_LEVEL):
         output = np.full(biases.shape, None, dtype=object)
         for index, bias in np.ndenumerate(biases):
             output[index] = self.engine.encode(bias, level)

@@ -21,16 +21,13 @@ from .model_encoder import (
     get_classifier_prefix,
     get_weight_array,
 )
-from .paths import get_light_plaintext_path
+from .paths import LIGHT_PLAINTEXT_PATH
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_path", type=str, default="./finetuned_models/mrpc/model.safetensors")
     parser.add_argument("--workers", type=int, default=None)
-    parser.add_argument(
-        "--compact", action="store_true", help="Use a memory-optimized execution mode with reduced memory footprint."
-    )
     return parser.parse_args()
 
 
@@ -348,10 +345,10 @@ def get_weights(model_path):
     return load_safetensor(model_path)
 
 
-def run_job(job, model_path, light_plaintext_path, compact):
+def run_job(job, model_path, light_plaintext_path):
     job_type, layer_index = job
     weights = get_weights(model_path)
-    engine = Engine(use_bootstrap_to_14_levels=True, compact=compact)
+    engine = Engine(bootstrap=True)
 
     if job_type == "mask":
         pre_encode_masks(engine, light_plaintext_path)
@@ -392,21 +389,20 @@ def main():
     args = parse_args()
 
     model_path = Path(args.model_path)
-    compact = args.compact
-    light_plaintext_path = get_light_plaintext_path(compact)
+    light_plaintext_path = LIGHT_PLAINTEXT_PATH
     worker_count = get_worker_count(args.workers)
     jobs = get_jobs()
 
     if worker_count == 1:
         for job in jobs:
-            run_job(job, model_path, light_plaintext_path, compact)
+            run_job(job, model_path, light_plaintext_path)
         return
 
     with ProcessPoolExecutor(
         max_workers=worker_count,
         mp_context=get_context("spawn"),
     ) as executor:
-        futures = [executor.submit(run_job, job, model_path, light_plaintext_path, compact) for job in jobs]
+        futures = [executor.submit(run_job, job, model_path, light_plaintext_path) for job in jobs]
         for future in futures:
             future.result()
 
